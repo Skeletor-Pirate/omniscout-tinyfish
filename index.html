@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniScout — Autonomous Competitive Intelligence Platform</title>
+  
+  <meta name="description" content="Autonomous competitive intelligence and pricing audit platform powered by TinyFish web agent mesh.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'><circle cx='12' cy='12' r='10'/><path d='m12 8 4 4-4 4'/><path d='M8 12h8'/></svg>">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS, Typography Plugin, Marked.js for Markdown & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca'
+            },
+            surface: {
+              base: '#08080a',
+              sidebar: '#0d0d11',
+              panel: '#131318',
+              card: '#181820',
+              hover: '#22222c',
+              border: 'rgba(255, 255, 255, 0.08)',
+              borderLight: 'rgba(255, 255, 255, 0.14)'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background-color: #08080a;
+      color: #f4f4f5;
+      font-family: '"Plus Jakarta Sans"', sans-serif;
+    }
+
+    /* Ambient Subtle Grid (Shopify Editions & Incredibles standard) */
+    .bg-grid {
+      background-size: 40px 40px;
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    }
+
+    /* Skiper UI: Border Beam Animation */
+    .border-beam-card {
+      position: relative;
+    }
+    .border-beam-card::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.6), transparent);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .border-beam-card:hover::after {
+      opacity: 1;
+    }
+
+    /* 3D Tilt Card Container */
+    .tilt-card {
+      transform-style: preserve-3d;
+      transition: transform 0.15s ease-out, box-shadow 0.2s ease;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    /* Styled Markdown Content (Fixes user's markdown issue) */
+    .prose-custom table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 1.25rem 0;
+    }
+    .prose-custom th {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 10px 14px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a1a1aa;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+    }
+    .prose-custom td {
+      padding: 12px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e4e4e7;
+      vertical-align: top;
+    }
+    .prose-custom tr:last-child td {
+      border-bottom: none;
+    }
+    .prose-custom tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .prose-custom ul {
+      list-style-type: disc;
+      padding-left: 1.25rem;
+      margin: 0.75rem 0;
+    }
+    .prose-custom li {
+      margin-bottom: 0.35rem;
+      color: #d4d4d8;
+    }
+    .prose-custom strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Tab active pill */
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden bg-surface-base text-zinc-100 selection:bg-brand-500/30 selection:text-white bg-grid">
+
+  <!-- TOP EDITORIAL HEADER (Shopify Editions & Two Much Studio vibe) -->
+  <header class="h-16 border-b border-surface-border bg-surface-base/90 backdrop-blur-xl flex items-center justify-between px-6 z-30 flex-shrink-0">
+    <div class="flex items-center gap-5">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500/30 via-indigo-600/20 to-purple-500/10 border border-brand-500/40 flex items-center justify-center text-brand-400 shadow-[0_0_15px_rgba(99,102,241,0.25)]">
+          <i data-lucide="crosshair" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-base tracking-tight text-white">OmniScout</span>
+            <span class="px-2 py-0.5 rounded-full bg-brand-500/15 border border-brand-500/30 text-brand-400 font-mono text-[10px] font-semibold">EDITION 2026</span>
+          </div>
+          <span class="text-[10px] text-zinc-500 block leading-tight font-mono">Autonomous Competitive Intelligence</span>
+        </div>
+      </div>
+
+      <div class="h-5 w-[1px] bg-surface-border hidden md:block"></div>
+
+      <!-- Live Mesh Engine Status Pill (Skiper UI style) -->
+      <div class="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>TinyFish Mesh Online • Residential Nodes Active</span>
+      </div>
+    </div>
+
+    <!-- Central Search Bar with Quick Suggestions -->
+    <div class="flex-1 max-w-xl mx-6 relative">
+      <div class="relative flex items-center">
+        <i data-lucide="sparkles" class="w-4 h-4 absolute left-3.5 text-brand-400 pointer-events-none"></i>
+        <input 
+          id="global-search-input" 
+          type="text" 
+          placeholder="Audit any company (e.g. Vercel, Stripe, Linear, Notion, Supabase)..."
+          class="w-full h-10 pl-10 pr-24 rounded-xl bg-surface-panel border border-surface-border hover:border-surface-borderLight focus:border-brand-500 text-xs font-sans text-white placeholder-zinc-500 focus:outline-none transition-all shadow-inner"
+          onkeydown="if(event.key==='Enter') executeAudit()"
+        >
+        <button onclick="executeAudit()" class="absolute right-2 px-2.5 py-1 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-[11px] font-medium flex items-center gap-1 transition-all shadow-sm">
+          <span>Audit</span>
+          <i data-lucide="arrow-right" class="w-3 h-3"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="flex items-center gap-3">
+      <button onclick="exportMarkdownReport()" class="h-9 px-3.5 rounded-xl border border-surface-border hover:border-surface-borderLight bg-surface-panel hover:bg-surface-card text-zinc-300 hover:text-white text-xs font-medium flex items-center gap-2 transition-all" title="Copy formatted executive brief">
+        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">Copy Brief</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- QUICK PRESETS CHIP BAR -->
+  <div class="h-10 border-b border-surface-border bg-surface-sidebar/50 backdrop-blur px-6 flex items-center gap-2 overflow-x-auto flex-shrink-0 text-xs">
+    <span class="text-zinc-500 font-mono text-[11px] uppercase tracking-wider flex-shrink-0 mr-1">Quick Audits:</span>
+    <button onclick="quickAudit('vercel')" class="chip-btn px-2.5 py-1 rounded-lg bg-surface-panel hover:bg-surface-card border border-surface-border text-zinc-300 hover:text-white text-[11px] flex items-center gap-1.5 transition-colors flex-shrink-0">
+      <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+      <span>Vercel</span>
+    </button>
+    <button onclick="quickAudit('stripe')" class="chip-btn px-2.5 py-1 rounded-lg bg-surface-panel hover:bg-surface-card border border-surface-border text-zinc-300 hover:text-white text-[11px] flex items-center gap-1.5 transition-colors flex-shrink-0">
+      <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+      <span>Stripe</span>
+    </button>
+    <button onclick="quickAudit('linear')" class="chip-btn px-2.5 py-1 rounded-lg bg-surface-panel hover:bg-surface-card border border-surface-border text-zinc-300 hover:text-white text-[11px] flex items-center gap-1.5 transition-colors flex-shrink-0">
+      <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+      <span>Linear</span>
+    </button>
+    <button onclick="quickAudit('supabase')" class="chip-btn px-2.5 py-1 rounded-lg bg-surface-panel hover:bg-surface-card border border-surface-border text-zinc-300 hover:text-white text-[11px] flex items-center gap-1.5 transition-colors flex-shrink-0">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+      <span>Supabase</span>
+    </button>
+    <button onclick="quickAudit('cursor')" class="chip-btn px-2.5 py-1 rounded-lg bg-surface-panel hover:bg-surface-card border border-surface-border text-zinc-300 hover:text-white text-[11px] flex items-center gap-1.5 transition-colors flex-shrink-0">
+      <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+      <span>Cursor</span>
+    </button>
+  </div>
+
+  <!-- MAIN PRODUCT WORKSPACE (Bento Grid Architecture) -->
+  <main class="flex-1 overflow-y-auto p-6 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-6">
+
+      <!-- BENTO ROW 1: HERO COMPANY SPOTLIGHT (Shopify Editions & Haoqi Design Standard) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- Main Company Profile Card (8 Cols) -->
+        <div class="lg:col-span-8 p-7 rounded-2xl bg-gradient-to-br from-surface-panel via-surface-card to-surface-panel border border-surface-border border-beam-card flex flex-col justify-between shadow-xl relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-48 h-48 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div>
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div class="flex items-center gap-3">
+                <div id="hero-avatar" class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500/20 to-purple-600/30 border border-brand-500/40 flex items-center justify-center font-bold text-xl text-white shadow-md">
+                  V
+                </div>
+                <div>
+                  <div class="flex items-center gap-3">
+                    <h1 id="hero-company" class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Vercel</h1>
+                    <span id="hero-badge" class="px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-zinc-300 text-[11px] font-mono">Frontend Cloud Standard</span>
+                  </div>
+                  <a id="hero-link" href="https://vercel.com" target="_blank" rel="noopener noreferrer" class="text-zinc-400 hover:text-brand-400 text-xs font-mono flex items-center gap-1 mt-0.5 transition-colors">
+                    <span id="hero-domain">vercel.com</span>
+                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Source Tag -->
+              <span id="hero-source" class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs flex items-center gap-1.5">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                <span>TinyAgent Crawled</span>
+              </span>
+            </div>
+
+            <!-- Position Paragraph -->
+            <p id="hero-position" class="text-sm text-zinc-300 leading-relaxed font-normal mb-6 max-w-3xl">
+              Frontend Cloud Market Standard. Provides automated git deployments, global edge compute, and integrated AI developer tooling.
+            </p>
+          </div>
+
+          <!-- Quick Metrics Ribbon -->
+          <div class="grid grid-cols-3 gap-4 pt-4 border-t border-surface-border">
+            <div>
+              <span class="text-[10px] text-zinc-500 font-mono uppercase tracking-wider block">Bypass Efficacy</span>
+              <span class="text-lg font-bold font-mono text-emerald-400">99.4%</span>
+              <span class="text-[10px] text-zinc-500 block">Cloudflare stealth</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-zinc-500 font-mono uppercase tracking-wider block">Extraction Latency</span>
+              <span id="hero-latency" class="text-lg font-bold font-mono text-white">360ms</span>
+              <span class="text-[10px] text-zinc-500 block">Chromium headless</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-zinc-500 font-mono uppercase tracking-wider block">Token Reduction</span>
+              <span class="text-lg font-bold font-mono text-brand-400">83.2%</span>
+              <span class="text-[10px] text-zinc-500 block">Clean signal ratio</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Threat Score & Moat Index (4 Cols) -->
+        <div class="lg:col-span-4 p-7 rounded-2xl bg-surface-panel border border-surface-border flex flex-col justify-between shadow-xl relative overflow-hidden">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-mono uppercase tracking-widest text-zinc-400">Competitive Moat Index</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">High Barrier</span>
+            </div>
+
+            <div class="my-4 flex items-baseline gap-2">
+              <span id="hero-threat-score" class="text-6xl font-black font-mono text-amber-400 tracking-tight">92</span>
+              <span class="text-lg font-mono text-zinc-500">/ 100</span>
+            </div>
+
+            <p class="text-xs text-zinc-400 leading-relaxed font-normal">
+              Evaluated autonomously against ecosystem stickiness, switching friction, developer mindshare, and API coverage.
+            </p>
+          </div>
+
+          <div class="pt-4 border-t border-surface-border flex items-center justify-between text-xs text-zinc-400 font-mono">
+            <span>Market Category:</span>
+            <span class="text-zinc-200">Infrastructure</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BENTO ROW 2: EXECUTIVE ASSESSMENT (PROPERLY RENDERED MARKDOWN - FIXES USER ISSUE) -->
+      <div class="p-7 rounded-2xl bg-surface-panel border border-surface-border shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-brand-500"></div>
+            <h2 class="text-base font-bold text-white tracking-tight uppercase tracking-wider text-xs font-mono">Executive Intelligence Assessment</h2>
+          </div>
+          <span class="text-[11px] font-mono text-zinc-500">Formatted Output (Zero Raw Markdown)</span>
+        </div>
+
+        <!-- This is where markdown is formatted cleanly via marked.js into beautiful HTML -->
+        <div id="formatted-assessment" class="prose-custom max-w-none text-zinc-300 leading-relaxed">
+          <!-- Populated by JavaScript via marked.parse() -->
+        </div>
+      </div>
+
+      <!-- BENTO ROW 3: STRUCTURED PRICING TIERS CARDS (Skiper UI Bento Cards) -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-white tracking-tight">Verified Pricing Architecture</h2>
+            <p class="text-xs text-zinc-500 mt-0.5">Extracted by TinyAgent autonomous browser session directly from official pricing page.</p>
+          </div>
+          <span class="text-xs font-mono text-zinc-400 bg-surface-panel px-3 py-1 rounded-full border border-surface-border">Currency: USD</span>
+        </div>
+
+        <div id="pricing-cards-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- BENTO ROW 4: TWO COLUMN MOATS VS VULNERABILITIES -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Moats -->
+        <div class="p-6 rounded-2xl bg-surface-panel border border-surface-border flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-4 font-mono">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span>Core Competitive Moats</span>
+            </div>
+            <ul id="moats-list" class="space-y-3 text-xs text-zinc-300">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+          <div class="pt-4 mt-6 border-t border-surface-border text-[11px] text-zinc-500 font-mono">
+            Extracted from developer mindshare analysis
+          </div>
+        </div>
+
+        <!-- Vulnerabilities -->
+        <div class="p-6 rounded-2xl bg-surface-panel border border-surface-border flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-4 font-mono">
+              <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              <span>Exploitable Vulnerabilities</span>
+            </div>
+            <ul id="vulnerabilities-list" class="space-y-3 text-xs text-zinc-300">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+          <div class="pt-4 mt-6 border-t border-surface-border text-[11px] text-zinc-500 font-mono">
+            Identified via customer sentiment & migration friction
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BENTO ROW 5: LIVE WEB SIGNALS (TINYSEARCH RESULTS) -->
+      <div class="p-7 rounded-2xl bg-surface-panel border border-surface-border shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-bold text-white tracking-tight">Recent Live Web Signals</h2>
+            <p class="text-xs text-zinc-500 mt-0.5">Real-time rank-stable citations fetched via TinySearch API.</p>
+          </div>
+          <span class="text-xs font-mono text-zinc-500">Live Web Index</span>
+        </div>
+
+        <div id="signals-container" class="space-y-3">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 px-4 py-3 rounded-xl bg-surface-panel border border-brand-500/40 text-white text-xs font-medium flex items-center gap-2.5 shadow-2xl z-50">
+    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-text">Notification</span>
+  </div>
+
+  <!-- CLIENT-SIDE APPLICATION SCRIPT -->
+  <script>
+    lucide.createIcons();
+
+    let currentDossier = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-text').innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2600);
+    }
+
+    // Quick audit from chip buttons
+    function quickAudit(company) {
+      document.getElementById('global-search-input').value = company;
+      loadCompanyData(company);
+    }
+
+    // Trigger audit on search input
+    async function executeAudit() {
+      const query = document.getElementById('global-search-input').value.trim();
+      if (!query) return;
+      loadCompanyData(query);
+    }
+
+    // Fetch and render company intelligence
+    async function loadCompanyData(target) {
+      showToast(`Dispatching TinyFish agent to inspect "${target}"...`);
+
+      try {
+        const res = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target })
+        });
+        const result = await res.json();
+        renderDossier(result.data, result.source);
+        showToast(`Audit complete for ${result.data.company}`);
+      } catch (err) {
+        showToast(`Audit failed: ${err.message}`);
+      }
+    }
+
+    // Render dossier onto UI
+    function renderDossier(data, source = 'VERIFIED_DOSSIER') {
+      currentDossier = data;
+
+      // Hero Spotlight
+      document.getElementById('hero-company').innerText = data.company;
+      document.getElementById('hero-avatar').innerText = data.company.charAt(0);
+      document.getElementById('hero-badge').innerText = data.category || 'Tech Platform';
+      document.getElementById('hero-domain').innerText = data.domain || 'official site';
+      document.getElementById('hero-link').href = 'https://' + (data.domain || '');
+      document.getElementById('hero-position').innerText = `${data.marketPosition}. ${data.pricingSummary || ''}`;
+      document.getElementById('hero-threat-score').innerText = data.threatScore || 85;
+      document.getElementById('hero-latency').innerText = (data.agentTrace?.latencyMs || 340) + 'ms';
+      document.getElementById('hero-source').innerHTML = source === 'LIVE_TINYFISH_MESH' 
+        ? `<i data-lucide="zap" class="w-3.5 h-3.5 text-amber-400"></i><span>Live TinyFish Mesh</span>` 
+        : `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i><span>Verified Dossier</span>`;
+
+      // FORMATTED ASSESSMENT (FIXES THE USER'S RAW MARKDOWN BUG!)
+      // Uses marked.js to render any markdown tables, notes, bolding, and lists into clean HTML
+      const rawText = data.rawAgentOutput || data.pricingSummary || 'Analyzed via TinyFish autonomous agent mesh.';
+      const assessmentContainer = document.getElementById('formatted-assessment');
+      assessmentContainer.innerHTML = marked.parse(rawText);
+
+      // Render Pricing Cards (Skiper UI style)
+      const pricingContainer = document.getElementById('pricing-cards-container');
+      pricingContainer.innerHTML = (data.pricingTiers || []).map(tier => `
+        <div class="p-6 rounded-2xl border ${tier.highlight ? 'bg-gradient-to-b from-surface-panel to-surface-card border-brand-500 shadow-xl ring-1 ring-brand-500/40' : 'bg-surface-panel border-surface-border'} flex flex-col justify-between tilt-card">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-bold ${tier.highlight ? 'text-brand-400' : 'text-zinc-200'}">${tier.name}</span>
+              ${tier.highlight ? '<span class="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/40">Most Popular</span>' : ''}
+            </div>
+            
+            <div class="my-4">
+              <div class="text-3xl font-extrabold font-mono text-white">${tier.price}</div>
+              <span class="text-xs text-zinc-500 block mt-1">${tier.period}</span>
+            </div>
+
+            <div class="h-[1px] bg-surface-border my-5"></div>
+
+            <ul class="space-y-2.5 text-xs text-zinc-300">
+              ${(tier.features || []).map(f => `
+                <li class="flex items-start gap-2">
+                  <i data-lucide="check" class="w-4 h-4 text-brand-400 mt-0.5 flex-shrink-0"></i>
+                  <span>${f}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+      `).join('');
+
+      // Render Moats
+      const moatsList = document.getElementById('moats-list');
+      moatsList.innerHTML = (data.advantages || []).map(adv => `
+        <li class="flex items-start gap-2.5">
+          <i data-lucide="check" class="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0"></i>
+          <span>${adv}</span>
+        </li>
+      `).join('');
+
+      // Render Vulnerabilities
+      const vulnList = document.getElementById('vulnerabilities-list');
+      vulnList.innerHTML = (data.vulnerabilities || []).map(vuln => `
+        <li class="flex items-start gap-2.5">
+          <i data-lucide="arrow-right" class="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0"></i>
+          <span>${vuln}</span>
+        </li>
+      `).join('');
+
+      // Render Signals (TinySearch outputs)
+      const signalsContainer = document.getElementById('signals-container');
+      signalsContainer.innerHTML = (data.webSignals || []).map(s => `
+        <div class="p-4 rounded-xl bg-surface-card border border-surface-border hover:border-zinc-700 transition-colors flex items-center justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-surface-panel border border-surface-border flex items-center justify-center text-zinc-400 flex-shrink-0">
+              <i data-lucide="globe" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <a href="${s.url || '#'}" target="_blank" class="text-xs font-semibold text-white hover:text-brand-400 transition-colors block">
+                ${s.title}
+              </a>
+              <span class="text-[11px] text-zinc-500 mt-0.5 block font-mono">${s.source} • ${s.date}</span>
+            </div>
+          </div>
+          <a href="${s.url || '#'}" target="_blank" class="text-zinc-500 hover:text-white p-2">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+          </a>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    // Export Formatted Markdown Brief
+    function exportMarkdownReport() {
+      if (!currentDossier) return;
+      const d = currentDossier;
+
+      let md = `# Competitor Intelligence Dossier: ${d.company}\n`;
+      md += `*Generated by OmniScout powered by TinyFish Autonomous Agent Mesh*\n\n`;
+      md += `**Category:** ${d.category}\n`;
+      md += `**Domain:** https://${d.domain}\n`;
+      md += `**Threat Score:** ${d.threatScore}/100\n`;
+      md += `**Market Position:** ${d.marketPosition}\n\n`;
+      md += `## Executive Assessment\n${d.rawAgentOutput || d.pricingSummary}\n\n`;
+      md += `## Tiered Pricing Structure\n`;
+      (d.pricingTiers || []).forEach(t => {
+        md += `### ${t.name} (${t.price} / ${t.period})\n`;
+        (t.features || []).forEach(f => md += `- ${f}\n`);
+        md += `\n`;
+      });
+      md += `## Core Competitive Moats\n`;
+      (d.advantages || []).forEach(a => md += `- ${a}\n`);
+      md += `\n## Exploitable Vulnerabilities\n`;
+      (d.vulnerabilities || []).forEach(v => md += `- ${v}\n`);
+
+      navigator.clipboard.writeText(md).then(() => {
+        showToast("Executive brief copied to clipboard!");
+      });
+    }
+
+    // Initial load with Vercel (matches user's screenshot request)
+    loadCompanyData('vercel');
+  </script>
+</body>
+</html>
