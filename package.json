@@ -1,23 +1,9 @@
 {
-  "name": "tinyfish-showcase",
+  "name": "omniscout-tinyfish",
   "version": "1.0.0",
-  "description": "Awwwards-Tier Interactive Showcase and Live Developer Console for TinyFish AI Web Agent Infrastructure",
   "type": "module",
-  "main": "server.mjs",
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs"
-  },
-  "keywords": [
-    "tinyfish",
-    "web-agents",
-    "browser-infrastructure",
-    "playwright",
-    "mcp",
-    "ai-agents",
-    "stealth-browser",
-    "awwwards"
-  ],
-  "author": "Antigravity Pair Programmer",
-  "license": "MIT"
+  }
 }

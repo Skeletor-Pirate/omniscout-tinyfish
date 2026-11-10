@@ -21,7 +21,6 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-// Parser to extract structured pricing tiers from raw markdown tables returned by TinyAgent
 function parseMarkdownTiers(rawText) {
   if (!rawText || typeof rawText !== 'string') return null;
 
@@ -32,7 +31,6 @@ function parseMarkdownTiers(rawText) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
-      // Check if header separator like |---|---|
       if (/^\|[\s\-:|]+\|$/.test(trimmed)) {
         isTable = true;
         continue;
@@ -78,10 +76,8 @@ function parseMarkdownTiers(rawText) {
   return null;
 }
 
-// Extract clean prose notes from markdown (stripping table)
 function extractCleanSummary(rawText) {
   if (!rawText) return "Analyzed in real time via TinyFish autonomous browser agent.";
-  // Remove markdown table syntax
   const nonTable = rawText
     .split('\n')
     .filter(line => !line.trim().startsWith('|'))
@@ -90,7 +86,6 @@ function extractCleanSummary(rawText) {
   return nonTable || rawText;
 }
 
-// Preset verified intelligence dossiers
 const PRESET_INTELLIGENCE = {
   stripe: {
     id: "stripe",
@@ -250,32 +245,37 @@ const PRESET_INTELLIGENCE = {
   }
 };
 
-const server = http.createServer(async (req, res) => {
+// Core Request Handler (Works for Vercel Serverless AND Node.js HTTP Server)
+export default async function handler(req, res) {
   // CORS configuration
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-API-Key, Authorization');
 
   if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
+    res.writeHead ? res.writeHead(204).end() : res.status(204).end();
     return;
   }
 
   // Health / Status endpoint
-  if (req.url === '/api/status') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
+  if (req.url === '/api/status' || req.url === '/status') {
+    const data = JSON.stringify({
       status: "ONLINE",
       engine: "TinyFish Autonomous Mesh",
       activeKey: TINYFISH_API_KEY.slice(0, 15) + "...",
       endpointsReady: ["TinyAgent", "TinySearch", "TinyFetch"]
-    }));
+    });
+    if (res.writeHead) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(data);
+    } else {
+      res.status(200).json(JSON.parse(data));
+    }
     return;
   }
 
   // Live Competitor Audit Endpoint
-  if (req.url === '/api/audit' && req.method === 'POST') {
+  if ((req.url === '/api/audit' || req.url === '/audit') && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', async () => {
@@ -284,35 +284,24 @@ const server = http.createServer(async (req, res) => {
         const target = (payload.target || 'stripe').trim();
         const targetLower = target.toLowerCase();
 
-        // 1. Check presets first
+        // Check presets
         for (const [key, preset] of Object.entries(PRESET_INTELLIGENCE)) {
           if (targetLower === key || targetLower.includes(key) || (preset.domain && targetLower.includes(preset.domain))) {
-            console.log(`[OmniScout] Returning verified dossier for preset: ${preset.company}`);
+            const out = JSON.stringify({ source: "VERIFIED_DOSSIER", data: preset });
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-              source: "VERIFIED_DOSSIER",
-              data: preset
-            }));
+            res.end(out);
             return;
           }
         }
 
-        // 2. Custom Target -> Execute Real TinyFish Mesh Pipeline
-        console.log(`[OmniScout] Dispatching live TinyFish pipeline for target: "${target}"...`);
+        // Custom Live Pipeline
         const startTime = Date.now();
-        const trace = {
-          steps: 0,
-          endpointsUsed: [],
-          logs: []
-        };
-
+        const trace = { steps: 0, endpointsUsed: [], logs: [] };
         let searchResults = [];
         let fetchedContent = "";
         let agentResults = null;
 
-        // Step 1: TinySearch
         try {
-          console.log(`[OmniScout] Step 1: Querying TinySearch for "${target} pricing features"...`);
           const searchRes = await fetch(`https://api.search.tinyfish.ai?query=${encodeURIComponent(target + ' pricing features')}`, {
             headers: { 'X-API-Key': TINYFISH_API_KEY }
           });
@@ -327,18 +316,12 @@ const server = http.createServer(async (req, res) => {
           trace.logs.push(`TinySearch error: ${e.message}`);
         }
 
-        // Determine target domain / URL
         let resolvedUrl = payload.url || (searchResults[0] && searchResults[0].url) || `https://${target.replace(/\s+/g, '').toLowerCase()}.com`;
 
-        // Step 2: TinyFetch
         try {
-          console.log(`[OmniScout] Step 2: Executing TinyFetch on ${resolvedUrl}...`);
           const fetchRes = await fetch("https://api.fetch.tinyfish.ai", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-API-Key": TINYFISH_API_KEY
-            },
+            headers: { "Content-Type": "application/json", "X-API-Key": TINYFISH_API_KEY },
             body: JSON.stringify({ urls: [resolvedUrl] })
           });
           if (fetchRes.ok) {
@@ -347,23 +330,18 @@ const server = http.createServer(async (req, res) => {
             fetchedContent = first.text || first.title || "";
             trace.steps++;
             trace.endpointsUsed.push("TinyFetch");
-            trace.logs.push(`TinyFetch successfully rendered DOM and extracted clean text (${fetchedContent.length} chars).`);
+            trace.logs.push(`TinyFetch rendered DOM and extracted text.`);
           }
         } catch (e) {
           trace.logs.push(`TinyFetch error: ${e.message}`);
         }
 
-        // Step 3: TinyAgent
         let parsedTiers = null;
         let rawAgentOutput = "";
         try {
-          console.log(`[OmniScout] Step 3: Launching TinyAgent on ${resolvedUrl}...`);
           const agentRes = await fetch("https://agent.tinyfish.ai/v1/automation/run", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-API-Key": TINYFISH_API_KEY
-            },
+            headers: { "Content-Type": "application/json", "X-API-Key": TINYFISH_API_KEY },
             body: JSON.stringify({
               url: resolvedUrl,
               goal: "Extract pricing tiers with plan name, price, target customer, and primary features."
@@ -374,9 +352,6 @@ const server = http.createServer(async (req, res) => {
             rawAgentOutput = agentResults.result?.result || "";
             trace.steps += (agentResults.num_of_steps || 3);
             trace.endpointsUsed.push("TinyAgent");
-            trace.logs.push(`TinyAgent completed autonomous run in ${agentResults.num_of_steps || 3} steps.`);
-
-            // Parse structured tiers if markdown table was returned
             parsedTiers = parseMarkdownTiers(rawAgentOutput);
           }
         } catch (e) {
@@ -387,7 +362,6 @@ const server = http.createServer(async (req, res) => {
         trace.latencyMs = duration;
         trace.tokenReduction = "81.5%";
 
-        // Formulate synthesized live report
         const customReport = {
           id: target.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
           company: target.charAt(0).toUpperCase() + target.slice(1),
@@ -400,11 +374,11 @@ const server = http.createServer(async (req, res) => {
           pricingTiers: parsedTiers || [
             { name: "Starter / Free", price: "$0", period: "self-serve", features: ["Essential core platform features", "Community support", "Standard rate limits"], highlight: false },
             { name: "Professional", price: "$20 - $49", period: "per month / seat", features: ["Full feature set unlocked", "Higher quota limits", "Priority email support", "Team collaboration"], highlight: true },
-            { name: "Enterprise", price: "Custom", period: "annual contracts", features: ["Dedicated Account Manager", "Custom SLA & SSO", "Audit logs & compliance", "Custom security guarantees"], highlight: false }
+            { name: "Enterprise", price: "Custom", period: "annual contracts", features: ["Dedicated Account Manager", "Custom SLA & SSO", "Audit logs & compliance"], highlight: false }
           ],
           features: [
             { category: "Core Platform", item: fetchedContent.slice(0, 160) || "Modern cloud-first web architecture" },
-            { category: "Market Positioning", item: (searchResults[0] && searchResults[0].snippet) || "Targeted at tech-forward development and business teams" }
+            { category: "Market Positioning", item: (searchResults[0] && searchResults[0].snippet) || "Targeted at tech-forward development teams" }
           ],
           advantages: ["Aggressive market expansion", "Fast release cadence", "Modern developer-friendly interfaces"],
           vulnerabilities: ["Higher switching costs", "Complex pricing structures across scaling tiers"],
@@ -418,12 +392,8 @@ const server = http.createServer(async (req, res) => {
         };
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-          source: "LIVE_TINYFISH_MESH",
-          data: customReport
-        }));
+        res.end(JSON.stringify({ source: "LIVE_TINYFISH_MESH", data: customReport }));
       } catch (err) {
-        console.error("[OmniScout Error]", err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
       }
@@ -432,39 +402,33 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Static File Serving
-  let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
+  let targetFile = req.url === '/' ? 'index.html' : req.url.split('?')[0];
+  let filePath = path.join(__dirname, targetFile);
+
+  if (!fs.existsSync(filePath)) {
+    filePath = path.join(__dirname, 'index.html');
+  }
+
   const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+  const contentType = MIME_TYPES[ext] || 'text/html';
 
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      if (err.code === 'ENOENT') {
-        fs.readFile(path.join(__dirname, 'index.html'), (e, fallback) => {
-          if (e) {
-            res.writeHead(404);
-            res.end('Not Found');
-          } else {
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(fallback);
-          }
-        });
-      } else {
-        res.writeHead(500);
-        res.end(`Server Error: ${err.code}`);
-      }
-    } else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content);
-    }
-  });
-});
+  try {
+    const content = fs.readFileSync(filePath);
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(content);
+  } catch (e) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+  }
+}
 
+// Standalone server when run directly
+const server = http.createServer(handler);
 server.listen(PORT, () => {
   console.log(`\n========================================================`);
   console.log(`⚡ OMNISCOUT // AUTONOMOUS COMPETITIVE INTELLIGENCE`);
   console.log(`========================================================`);
   console.log(`🚀 Platform active at: http://localhost:${PORT}`);
   console.log(`🔑 TinyFish Mesh Authenticated: ${TINYFISH_API_KEY.slice(0, 15)}...`);
-  console.log(`📡 Backend ready with Markdown Table Parser & Live Mesh!`);
   console.log(`========================================================\n`);
 });
